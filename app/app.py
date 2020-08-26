@@ -1,13 +1,28 @@
-from bson import json_util, ObjectId
+import sys
+from bson import json_util, ObjectId, Timestamp
 from flask import Flask
+from datetime import datetime, timezone
 
 from app.helpers import mongo_client
+
+
+from . import rules
+from flask_request_validator import (
+    exceptions,
+    Param,
+    validate_params,
+    Pattern,
+    GET
+)
 
 API_VERSION = '1.0'
 
 app = Flask(__name__)
 db = mongo_client()
 
+################################
+# Routes
+################################
 
 @app.route('/')
 def root():
@@ -36,12 +51,28 @@ def engagements_by_id(engagement_id):
     engagement_object_id = ObjectId(engagement_id)
     return json_util.dumps(db.engagements.find_one({'_id': engagement_object_id}))
 
-
 @app.route('/interactions')
-def interactions():
-    # TODO: Modify this endpoint according to problem statement!
-    return json_util.dumps(db.interactions.find({}))
+@validate_params(
+    Param(name='engagementId', param_type=GET, value_type=str, required=True, rules=[rules.ObjectIdRule()]),
+    Param(name='startDate', param_type=GET, value_type=int, required=False, rules=[rules.UnixTimestampRule()]),
+    Param(name='endDate', param_type=GET, value_type=int, required=False, rules=[rules.UnixTimestampRule()])
+)
+def interactions(engagement_id:str, start_date:int, end_date:int):    
+    date_filter = {}
+    db_query = {
+        'engagementId': ObjectId(engagement_id),                        
+    }
 
+    if start_date is not None:
+        date_filter['$gte'] = datetime.fromtimestamp(start_date/1000.0, timezone.utc)
+
+    if end_date is not None:
+        date_filter['$lt'] = datetime.fromtimestamp(end_date/1000.0, timezone.utc)
+    
+    if any(date_filter):
+        db_query['interactionDate'] = date_filter            
+    
+    return json_util.dumps(db.interactions.find(db_query))
 
 @app.route('/interactions/<interaction_id>')
 def interactions_by_id(interaction_id):
