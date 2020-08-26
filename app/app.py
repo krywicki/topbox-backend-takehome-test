@@ -78,3 +78,22 @@ def interactions(engagement_id:str, start_date:int, end_date:int):
 def interactions_by_id(interaction_id):
     interaction_object_id = ObjectId(interaction_id)
     return json_util.dumps(db.interactions.find_one({'_id': interaction_object_id}))
+
+
+################################
+# Client Error Handlers
+################################
+
+@app.errorhandler(exceptions.InvalidRequest)
+def handle_invalid_request(e: exceptions.InvalidRequest):
+    return json_util.dumps({ 'error': e.message }), 400
+
+@app.errorhandler(exceptions.NotAllowedType)
+def handle_not_allowed_type(e: exceptions.NotAllowedType):
+    return json_util.dumps({'error': e.message }), 400
+
+@app.errorhandler(exceptions.UndefinedParamType)
+def handle_undefined_param_type(e: exceptions.UndefinedParamType):
+    return json_util.dumps({'errror': e.message }), 400
+
+
