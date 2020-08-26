@@ -11,6 +11,7 @@ setup(
         'cachetools==4.1.1',
         'flask==1.1.2',
         'pymongo==3.10.1',
+        'flask-request-validator==2.1.2'
     ],
     test_suite='tests',
     packages=find_packages(exclude=('tests',)),
